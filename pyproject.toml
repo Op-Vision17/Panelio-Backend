@@ -1,0 +1,28 @@
+[tool.poetry]
+name = "panelio"
+version = "0.1.0"
+description = "Panelio Backend"
+authors = ["Author <author@example.com>"]
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "^3.10"
+fastapi = "^0.136.1"
+uvicorn = {extras = ["standard"], version = "^0.46.0"}
+sqlalchemy = {extras = ["asyncio"], version = "^2.0.49"}
+asyncpg = "^0.31.0"
+alembic = "^1.18.4"
+pydantic-settings = "^2.14.1"
+python-jose = {extras = ["cryptography"], version = "^3.5.0"}
+passlib = {extras = ["bcrypt"], version = "^1.7.4"}
+aiosmtplib = "^5.1.0"
+groq = "^1.2.0"
+python-multipart = "^0.0.27"
+pypdf = "^6.11.0"
+redis = "^7.4.0"
+psycopg2-binary = "^2.9.12"
+email-validator = "^2.3.0"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
