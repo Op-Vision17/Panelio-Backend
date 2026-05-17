@@ -1,0 +1,45 @@
+import uuid
+from datetime import datetime
+from typing import List, Optional
+
+from pydantic import BaseModel, ConfigDict
+
+
+class QuestionResponse(BaseModel):
+    id: uuid.UUID
+    viva_id: uuid.UUID
+    question_text: str
+    answer_text: str
+    hint: Optional[str] = None
+    order_index: int
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class VivaCreate(BaseModel):
+    name: str
+    start_time: Optional[datetime] = None
+    end_time: Optional[datetime] = None
+
+
+class VivaUpdate(BaseModel):
+    name: Optional[str] = None
+    start_time: Optional[datetime] = None
+    end_time: Optional[datetime] = None
+
+
+class VivaResponse(BaseModel):
+    id: uuid.UUID
+    name: str
+    code: str
+    start_time: Optional[datetime] = None
+    end_time: Optional[datetime] = None
+    created_at: datetime
+    owner_id: uuid.UUID
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class VivaDetailResponse(VivaResponse):
+    questions: List[QuestionResponse] = []

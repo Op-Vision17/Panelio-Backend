@@ -1,5 +1,7 @@
 import redis.asyncio as redis
+
 from app.core.config import settings
+
 
 class RedisClient:
     _instance = None
@@ -11,6 +13,7 @@ class RedisClient:
                 settings.REDIS_URL, decode_responses=True
             )
         return cls._instance
+
 
 async def get_redis():
     return await RedisClient.get_instance()

@@ -1,9 +1,12 @@
 import logging
-from aiosmtplib import send
 from email.message import EmailMessage
+
+from aiosmtplib import send
+
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
+
 
 async def send_otp_email(to: str, otp: str):
     if not settings.SMTP_USERNAME or not settings.SMTP_PASSWORD:
