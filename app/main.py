@@ -1,13 +1,15 @@
 import logging
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
-from app.core.database import engine
+
+from app.core.database import Base, engine
 from app.core.redis import get_redis
-from app.features.auth.router import router as auth_router
-from app.features.vivas.router import router as vivas_router
-from app.features.questions.router import router as questions_router
 from app.features.attend.router import router as attend_router
+from app.features.auth.router import router as auth_router
+from app.features.questions.router import router as questions_router
+from app.features.vivas.router import router as vivas_router
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -21,6 +23,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 @app.on_event("startup")
 async def startup_event():
@@ -40,10 +43,12 @@ async def startup_event():
     except Exception as e:
         logger.error(f"Redis connection failed: {e}")
 
+
 app.include_router(auth_router, prefix="/auth", tags=["Auth"])
 app.include_router(vivas_router, prefix="/vivas", tags=["Vivas"])
 app.include_router(questions_router, prefix="/questions", tags=["Questions"])
 app.include_router(attend_router, prefix="/attend", tags=["Attend"])
+
 
 @app.get("/")
 async def root():
