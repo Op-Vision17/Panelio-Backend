@@ -16,43 +16,52 @@ from app.features.vivas.schema import (
     VivaUpdate,
 )
 from app.shared.dependencies import get_current_user
+from app.shared.responses import SuccessResponse, success_response
 
 router = APIRouter()
 
 
-@router.post("", response_model=VivaResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "",
+    response_model=SuccessResponse[VivaResponse],
+    status_code=status.HTTP_201_CREATED,
+)
 async def create_viva(
     data: VivaCreate,
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
-    return await handler.handle_create_viva(data, db, current_user)
+    res = await handler.handle_create_viva(data, db, current_user)
+    return success_response(data=res, message="Viva created successfully")
 
 
-@router.get("", response_model=List[VivaResponse])
+@router.get("", response_model=SuccessResponse[List[VivaResponse]])
 async def get_vivas(
     db: AsyncSession = Depends(get_db), current_user=Depends(get_current_user)
 ):
-    return await handler.handle_get_vivas(db, current_user)
+    res = await handler.handle_get_vivas(db, current_user)
+    return success_response(data=res, message="Vivas retrieved successfully")
 
 
-@router.get("/{viva_id}", response_model=VivaDetailResponse)
+@router.get("/{viva_id}", response_model=SuccessResponse[VivaDetailResponse])
 async def get_viva(
     viva_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
-    return await handler.handle_get_viva(viva_id, db, current_user)
+    res = await handler.handle_get_viva(viva_id, db, current_user)
+    return success_response(data=res, message="Viva retrieved successfully")
 
 
-@router.patch("/{viva_id}", response_model=VivaResponse)
+@router.patch("/{viva_id}", response_model=SuccessResponse[VivaResponse])
 async def update_viva(
     viva_id: uuid.UUID,
     data: VivaUpdate,
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
-    return await handler.handle_update_viva(viva_id, data, db, current_user)
+    res = await handler.handle_update_viva(viva_id, data, db, current_user)
+    return success_response(data=res, message="Viva updated successfully")
 
 
 @router.delete("/{viva_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -66,7 +75,7 @@ async def delete_viva(
 
 @router.post(
     "/{viva_id}/questions",
-    response_model=QuestionResponse,
+    response_model=SuccessResponse[QuestionResponse],
     status_code=status.HTTP_201_CREATED,
 )
 async def create_viva_question(
@@ -75,24 +84,26 @@ async def create_viva_question(
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
-    return await handler.handle_create_viva_question(viva_id, data, db, current_user)
+    res = await handler.handle_create_viva_question(viva_id, data, db, current_user)
+    return success_response(data=res, message="Question created successfully")
 
 
 @router.get(
     "/{viva_id}/questions",
-    response_model=List[QuestionResponse],
+    response_model=SuccessResponse[List[QuestionResponse]],
 )
 async def get_viva_questions(
     viva_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
-    return await handler.handle_get_viva_questions(viva_id, db, current_user)
+    res = await handler.handle_get_viva_questions(viva_id, db, current_user)
+    return success_response(data=res, message="Questions retrieved successfully")
 
 
 @router.post(
     "/{viva_id}/questions/generate",
-    response_model=List[QuestionResponse],
+    response_model=SuccessResponse[List[QuestionResponse]],
     status_code=status.HTTP_201_CREATED,
 )
 async def generate_viva_questions(
@@ -101,4 +112,5 @@ async def generate_viva_questions(
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
-    return await handler.handle_generate_viva_questions(viva_id, data, db, current_user)
+    res = await handler.handle_generate_viva_questions(viva_id, data, db, current_user)
+    return success_response(data=res, message="Questions generated successfully")
