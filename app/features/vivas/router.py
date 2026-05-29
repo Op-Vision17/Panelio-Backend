@@ -7,6 +7,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.features.vivas import handler
 from app.features.vivas.schema import (
+    QuestionCreate,
+    QuestionResponse,
+    QuestionsGenerateRequest,
     VivaCreate,
     VivaDetailResponse,
     VivaResponse,
@@ -59,3 +62,43 @@ async def delete_viva(
     current_user=Depends(get_current_user),
 ):
     return await handler.handle_delete_viva(viva_id, db, current_user)
+
+
+@router.post(
+    "/{viva_id}/questions",
+    response_model=QuestionResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_viva_question(
+    viva_id: uuid.UUID,
+    data: QuestionCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    return await handler.handle_create_viva_question(viva_id, data, db, current_user)
+
+
+@router.get(
+    "/{viva_id}/questions",
+    response_model=List[QuestionResponse],
+)
+async def get_viva_questions(
+    viva_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    return await handler.handle_get_viva_questions(viva_id, db, current_user)
+
+
+@router.post(
+    "/{viva_id}/questions/generate",
+    response_model=List[QuestionResponse],
+    status_code=status.HTTP_201_CREATED,
+)
+async def generate_viva_questions(
+    viva_id: uuid.UUID,
+    data: QuestionsGenerateRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    return await handler.handle_generate_viva_questions(viva_id, data, db, current_user)

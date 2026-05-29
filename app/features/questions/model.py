@@ -22,7 +22,7 @@ class Question(Base):
     hint: Mapped[str] = mapped_column(Text, nullable=True)
     order_index: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=lambda: datetime.now(timezone.utc)
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
 
     viva: Mapped["Viva"] = relationship("Viva", back_populates="questions")
