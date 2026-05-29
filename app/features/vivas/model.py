@@ -24,7 +24,7 @@ class Viva(Base):
     start_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
     end_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=lambda: datetime.now(timezone.utc)
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
 
     owner: Mapped["User"] = relationship("User", back_populates="vivas")

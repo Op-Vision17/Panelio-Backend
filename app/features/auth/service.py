@@ -3,7 +3,6 @@ import random
 import string
 from datetime import datetime, timezone
 
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import (
@@ -13,6 +12,7 @@ from app.core.security import (
     verify_otp_hash,
     verify_token,
 )
+from app.features.auth.dao import AuthDAO
 from app.features.auth.model import RefreshToken, User
 from app.shared.exceptions import BadRequestError, UnauthorizedError
 
@@ -36,15 +36,12 @@ async def verify_and_consume_otp(email: str, otp: str, redis) -> bool:
 
 
 async def get_or_create_user(email: str, db: AsyncSession) -> User:
-    query = select(User).where(User.email == email)
-    result = await db.execute(query)
-    user = result.scalar_one_or_none()
+    auth_dao = AuthDAO(db)
+    user = await auth_dao.get_user_by_email(email)
 
     if not user:
         user = User(email=email)
-        db.add(user)
-        await db.commit()
-        await db.refresh(user)
+        user = await auth_dao.create_user(user)
 
     return user
 
@@ -68,8 +65,8 @@ async def create_token_pair(user_id: str, db: AsyncSession) -> tuple[str, str]:
     new_refresh_token = RefreshToken(
         user_id=user_id, token_hash=token_hash, expires_at=expires_at
     )
-    db.add(new_refresh_token)
-    await db.commit()
+    auth_dao = AuthDAO(db)
+    await auth_dao.create_refresh_token(new_refresh_token)
 
     return access_token, refresh_token
 
@@ -79,9 +76,8 @@ async def rotate_refresh_token(token: str, db: AsyncSession) -> tuple[str, str]:
     user_id = payload.get("sub")
 
     token_hash = hashlib.sha256(token.encode()).hexdigest()
-    query = select(RefreshToken).where(RefreshToken.token_hash == token_hash)
-    result = await db.execute(query)
-    db_token = result.scalar_one_or_none()
+    auth_dao = AuthDAO(db)
+    db_token = await auth_dao.get_refresh_token_by_hash(token_hash)
 
     if (
         not db_token
@@ -92,7 +88,7 @@ async def rotate_refresh_token(token: str, db: AsyncSession) -> tuple[str, str]:
 
     # Revoke old token
     db_token.revoked = True
-    await db.commit()
+    await auth_dao.save_changes()
 
     # Create new pair
     return await create_token_pair(user_id, db)
@@ -100,10 +96,9 @@ async def rotate_refresh_token(token: str, db: AsyncSession) -> tuple[str, str]:
 
 async def revoke_refresh_token(token: str, db: AsyncSession):
     token_hash = hashlib.sha256(token.encode()).hexdigest()
-    query = select(RefreshToken).where(RefreshToken.token_hash == token_hash)
-    result = await db.execute(query)
-    db_token = result.scalar_one_or_none()
+    auth_dao = AuthDAO(db)
+    db_token = await auth_dao.get_refresh_token_by_hash(token_hash)
 
     if db_token:
         db_token.revoked = True
-        await db.commit()
+        await auth_dao.save_changes()

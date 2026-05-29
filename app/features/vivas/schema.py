@@ -17,6 +17,18 @@ class QuestionResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class QuestionCreate(BaseModel):
+    question_text: str
+    answer_text: str
+    hint: Optional[str] = None
+
+
+class QuestionsGenerateRequest(BaseModel):
+    topic: str
+    num_questions: int = 5
+    doc_text: Optional[str] = None
+
+
 class VivaCreate(BaseModel):
     name: str
     start_time: Optional[datetime] = None
