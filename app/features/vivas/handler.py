@@ -3,8 +3,8 @@ import uuid
 from typing import Optional
 
 from fastapi import HTTPException, UploadFile, status
-from sqlalchemy.ext.asyncio import AsyncSession
 from pypdf import PdfReader
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.features.vivas import service
 from app.features.vivas.schema import (
@@ -133,3 +133,6 @@ async def handle_generate_viva_questions_from_document(
     )
     return await service.generate_viva_questions(db, viva_id, current_user.id, gen_data)
 
+
+async def handle_get_viva_sessions(viva_id, db: AsyncSession, current_user):
+    return await service.get_viva_sessions(db, viva_id, current_user.id)

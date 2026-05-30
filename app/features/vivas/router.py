@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, File, Form, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
+from app.features.attend.schema import VivaAttendeeSessionResponse
 from app.features.vivas import handler
 from app.features.vivas.schema import (
     QuestionCreate,
@@ -116,7 +117,9 @@ async def generate_viva_questions_topic(
     res = await handler.handle_generate_viva_questions_from_topic(
         viva_id, data, db, current_user
     )
-    return success_response(data=res, message="Questions generated from topic successfully")
+    return success_response(
+        data=res, message="Questions generated from topic successfully"
+    )
 
 
 @router.post(
@@ -140,4 +143,21 @@ async def generate_viva_questions_document(
         db=db,
         current_user=current_user,
     )
-    return success_response(data=res, message="Questions generated from document successfully")
+    return success_response(
+        data=res, message="Questions generated from document successfully"
+    )
+
+
+@router.get(
+    "/{viva_id}/sessions",
+    response_model=SuccessResponse[List[VivaAttendeeSessionResponse]],
+)
+async def get_viva_sessions(
+    viva_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    res = await handler.handle_get_viva_sessions(viva_id, db, current_user)
+    return success_response(
+        data=res, message="Attendee sessions retrieved successfully"
+    )

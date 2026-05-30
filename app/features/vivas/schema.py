@@ -38,12 +38,14 @@ class VivaCreate(BaseModel):
     name: str
     start_time: Optional[datetime] = None
     end_time: Optional[datetime] = None
+    duration: Optional[int] = 15
 
 
 class VivaUpdate(BaseModel):
     name: Optional[str] = None
     start_time: Optional[datetime] = None
     end_time: Optional[datetime] = None
+    duration: Optional[int] = None
 
 
 class VivaResponse(BaseModel):
@@ -52,6 +54,7 @@ class VivaResponse(BaseModel):
     code: str
     start_time: Optional[datetime] = None
     end_time: Optional[datetime] = None
+    duration: Optional[int] = None
     created_at: datetime
     owner_id: uuid.UUID
 

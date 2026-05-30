@@ -35,6 +35,7 @@ async def create_viva(db: AsyncSession, data: VivaCreate, user_id) -> Viva:
         code=code,
         start_time=data.start_time,
         end_time=data.end_time,
+        duration=data.duration,
     )
     viva_dao = VivaDAO(db)
     return await viva_dao.create(viva)
@@ -71,6 +72,8 @@ async def update_viva(db: AsyncSession, viva_id, data: VivaUpdate, user_id) -> V
         viva.start_time = data.start_time
     if data.end_time is not None:
         viva.end_time = data.end_time
+    if data.duration is not None:
+        viva.duration = data.duration
 
     return await viva_dao.update(viva)
 
@@ -176,3 +179,35 @@ async def generate_viva_questions(
     if questions_to_create:
         return await viva_dao.create_questions(questions_to_create)
     return []
+
+
+async def get_viva_sessions(
+    db: AsyncSession, viva_id: uuid.UUID, owner_id: uuid.UUID
+) -> list:
+    # 1. Verify viva exists and belongs to owner_id
+    viva_dao = VivaDAO(db)
+    viva = await viva_dao.get_by_id_and_owner(viva_id, owner_id)
+    if not viva:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Viva not found"
+        )
+
+    # 2. Get sessions for this viva
+    from app.features.attend.dao import AttendDAO
+    from app.features.attend.schema import VivaAttendeeSessionResponse
+
+    attend_dao = AttendDAO(db)
+    sessions = await attend_dao.get_sessions_by_viva(viva_id)
+
+    res = []
+    for s in sessions:
+        res.append(
+            VivaAttendeeSessionResponse(
+                session_id=s.id,
+                attendee_email=s.user.email if s.user else "unknown",
+                status=s.status,
+                overall_score=s.overall_score,
+                completed_at=s.completed_at,
+            )
+        )
+    return res

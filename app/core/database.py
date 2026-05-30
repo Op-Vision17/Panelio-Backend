@@ -19,6 +19,8 @@ async def get_db():
         yield session
 
 
+from app.features.attend.model import AttendeeAnswer, VivaSession
+
 # databses models loding
 from app.features.auth.model import RefreshToken, User
 from app.features.questions.model import Question
