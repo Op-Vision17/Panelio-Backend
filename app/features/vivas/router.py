@@ -1,7 +1,7 @@
 import uuid
-from typing import List
+from typing import List, Optional
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, File, Form, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -10,6 +10,7 @@ from app.features.vivas.schema import (
     QuestionCreate,
     QuestionResponse,
     QuestionsGenerateRequest,
+    QuestionsGenerateTopicRequest,
     VivaCreate,
     VivaDetailResponse,
     VivaResponse,
@@ -102,15 +103,41 @@ async def get_viva_questions(
 
 
 @router.post(
-    "/{viva_id}/questions/generate",
+    "/{viva_id}/questions/generate/topic",
     response_model=SuccessResponse[List[QuestionResponse]],
     status_code=status.HTTP_201_CREATED,
 )
-async def generate_viva_questions(
+async def generate_viva_questions_topic(
     viva_id: uuid.UUID,
-    data: QuestionsGenerateRequest,
+    data: QuestionsGenerateTopicRequest,
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
-    res = await handler.handle_generate_viva_questions(viva_id, data, db, current_user)
-    return success_response(data=res, message="Questions generated successfully")
+    res = await handler.handle_generate_viva_questions_from_topic(
+        viva_id, data, db, current_user
+    )
+    return success_response(data=res, message="Questions generated from topic successfully")
+
+
+@router.post(
+    "/{viva_id}/questions/generate/document",
+    response_model=SuccessResponse[List[QuestionResponse]],
+    status_code=status.HTTP_201_CREATED,
+)
+async def generate_viva_questions_document(
+    viva_id: uuid.UUID,
+    num_questions: int = Form(5),
+    doc_text: Optional[str] = Form(None),
+    doc_file: Optional[UploadFile] = File(None),
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    res = await handler.handle_generate_viva_questions_from_document(
+        viva_id=viva_id,
+        num_questions=num_questions,
+        doc_text=doc_text,
+        doc_file=doc_file,
+        db=db,
+        current_user=current_user,
+    )
+    return success_response(data=res, message="Questions generated from document successfully")

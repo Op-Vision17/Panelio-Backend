@@ -29,6 +29,11 @@ class QuestionsGenerateRequest(BaseModel):
     doc_text: Optional[str] = None
 
 
+class QuestionsGenerateTopicRequest(BaseModel):
+    topic: str
+    num_questions: int = 5
+
+
 class VivaCreate(BaseModel):
     name: str
     start_time: Optional[datetime] = None
