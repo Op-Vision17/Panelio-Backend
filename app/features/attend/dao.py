@@ -86,7 +86,6 @@ class AttendDAO:
         stmt = (
             select(Question)
             .where(Question.viva_id == viva_id)
-            .order_by(Question.order_index)
         )
         result = await self.db.execute(stmt)
         return list(result.scalars().all())

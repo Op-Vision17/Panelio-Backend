@@ -28,16 +28,6 @@ class QuestionImproveRequest(BaseModel):
 class QuestionResponse(QuestionBase):
     id: uuid.UUID
     viva_id: uuid.UUID
-    order_index: int
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
-
-
-class ReorderItem(BaseModel):
-    id: uuid.UUID
-    order_index: int
-
-
-class ReorderRequest(BaseModel):
-    items: List[ReorderItem]

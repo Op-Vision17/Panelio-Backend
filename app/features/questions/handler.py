@@ -6,7 +6,6 @@ from app.features.questions import service
 from app.features.questions.schema import (
     QuestionImproveRequest,
     QuestionUpdate,
-    ReorderRequest,
 )
 
 
@@ -21,11 +20,6 @@ async def handle_delete_question(
 ):
     await service.delete_question(db, question_id, current_user.id)
 
-
-async def handle_reorder_questions(
-    data: ReorderRequest, db: AsyncSession, current_user
-):
-    await service.reorder_questions(db, current_user.id, data)
 
 
 async def handle_improve_question(

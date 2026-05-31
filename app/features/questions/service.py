@@ -8,7 +8,6 @@ from app.features.questions.model import Question
 from app.features.questions.schema import (
     QuestionImproveRequest,
     QuestionUpdate,
-    ReorderRequest,
 )
 from app.shared.llm import improve_question as llm_improve_question
 
@@ -50,33 +49,6 @@ async def delete_question(db: AsyncSession, question_id: uuid.UUID, user_id: uui
 
     await q_dao.delete(question)
 
-
-async def reorder_questions(db: AsyncSession, user_id: uuid.UUID, data: ReorderRequest):
-    if not data.items:
-        return
-
-    q_dao = QuestionDAO(db)
-    question_ids = [item.id for item in data.items]
-    questions = await q_dao.get_by_ids_with_viva(question_ids)
-
-    if len(questions) != len(question_ids):
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="One or more questions not found",
-        )
-
-    for q in questions:
-        if q.viva.owner_id != user_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Not authorized for one or more questions",
-            )
-
-    order_map = {item.id: item.order_index for item in data.items}
-    for q in questions:
-        q.order_index = order_map[q.id]
-
-    await q_dao.save_changes()
 
 
 async def improve_existing_question(

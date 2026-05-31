@@ -63,12 +63,6 @@ class VivaDAO:
     async def get_viva_by_id_raw(self, viva_id: uuid.UUID) -> Viva | None:
         return await self.db.get(Viva, viva_id)
 
-    async def get_max_question_order(self, viva_id: uuid.UUID) -> int | None:
-        result = await self.db.execute(
-            select(func.max(Question.order_index)).where(Question.viva_id == viva_id)
-        )
-        return result.scalar()
-
     async def create_question(self, question: Question) -> Question:
         self.db.add(question)
         await self.db.commit()
@@ -79,7 +73,6 @@ class VivaDAO:
         stmt = (
             select(Question)
             .where(Question.viva_id == viva_id)
-            .order_by(Question.order_index)
         )
         result = await self.db.execute(stmt)
         return list(result.scalars().all())

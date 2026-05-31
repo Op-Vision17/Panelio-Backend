@@ -11,7 +11,6 @@ class QuestionResponse(BaseModel):
     question_text: str
     answer_text: str
     hint: Optional[str] = None
-    order_index: int
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)

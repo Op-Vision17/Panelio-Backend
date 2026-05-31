@@ -54,7 +54,6 @@ async def get_viva_by_id(db: AsyncSession, viva_id, user_id) -> Viva:
             status_code=status.HTTP_404_NOT_FOUND, detail="Viva not found"
         )
 
-    viva.questions.sort(key=lambda q: q.order_index)
     return viva
 
 
@@ -103,12 +102,8 @@ async def create_viva_question(
             status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized"
         )
 
-    max_order = await viva_dao.get_max_question_order(viva_id)
-    next_order = (max_order + 1) if max_order is not None else 0
-
     new_question = Question(
         viva_id=viva_id,
-        order_index=next_order,
         question_text=data.question_text,
         answer_text=data.answer_text,
         hint=data.hint,
@@ -155,11 +150,8 @@ async def generate_viva_questions(
         topic=data.topic, num_questions=data.num_questions, doc_text=data.doc_text
     )
 
-    max_order = await viva_dao.get_max_question_order(viva_id)
-    start_order = (max_order + 1) if max_order is not None else 0
-
     questions_to_create = []
-    for i, item in enumerate(generated):
+    for item in generated:
         question_text = item.get("question")
         answer_text = item.get("answer")
         hint = item.get("hint")
@@ -169,7 +161,6 @@ async def generate_viva_questions(
 
         q = Question(
             viva_id=viva_id,
-            order_index=start_order + i,
             question_text=question_text,
             answer_text=answer_text,
             hint=hint,

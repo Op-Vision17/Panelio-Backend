@@ -10,7 +10,6 @@ from app.features.questions.schema import (
     QuestionImproveRequest,
     QuestionResponse,
     QuestionUpdate,
-    ReorderRequest,
 )
 from app.shared.dependencies import get_current_user
 from app.shared.responses import SuccessResponse, success_response
@@ -48,20 +47,6 @@ async def delete_question(
 ):
     return await handler.handle_delete_question(question_id, db, current_user)
 
-
-@router.post(
-    "/reorder", response_model=SuccessResponse[dict], status_code=status.HTTP_200_OK
-)
-async def reorder_questions(
-    data: ReorderRequest,
-    db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user),
-):
-    await handler.handle_reorder_questions(data, db, current_user)
-    return success_response(
-        data={"detail": "Questions reordered successfully"},
-        message="Questions reordered successfully",
-    )
 
 
 @router.post("/{question_id}/improve", response_model=SuccessResponse[QuestionBase])
