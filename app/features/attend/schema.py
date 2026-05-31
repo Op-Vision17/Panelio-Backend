@@ -73,3 +73,17 @@ class VivaAttendeeSessionResponse(BaseModel):
     status: str
     overall_score: Optional[float] = None
     completed_at: Optional[datetime] = None
+
+
+class UserSessionResponse(BaseModel):
+    session_id: uuid.UUID
+    viva_id: uuid.UUID
+    viva_name: str
+    viva_code: str
+    viva_start_time: Optional[datetime] = None
+    viva_end_time: Optional[datetime] = None
+    status: str
+    joined_at: datetime
+    started_at: Optional[datetime] = None
+    completed_at: Optional[datetime] = None
+    overall_score: Optional[float] = None

@@ -99,3 +99,13 @@ class AttendDAO:
         )
         result = await self.db.execute(stmt)
         return list(result.scalars().all())
+
+    async def get_sessions_by_user(self, user_id: uuid.UUID) -> list[VivaSession]:
+        stmt = (
+            select(VivaSession)
+            .options(selectinload(VivaSession.viva))
+            .where(VivaSession.user_id == user_id)
+            .order_by(VivaSession.joined_at.desc())
+        )
+        result = await self.db.execute(stmt)
+        return list(result.scalars().all())

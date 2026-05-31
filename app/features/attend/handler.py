@@ -47,3 +47,7 @@ async def handle_get_session_summary(
     session_id: uuid.UUID, db: AsyncSession, current_user
 ):
     return await service.get_session_summary(db, session_id, current_user.id)
+
+
+async def handle_get_user_sessions(db: AsyncSession, current_user):
+    return await service.get_user_sessions(db, current_user.id)

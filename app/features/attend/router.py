@@ -10,6 +10,7 @@ from app.features.attend.schema import (
     JoinVivaRequest,
     QuestionListResponse,
     SessionSummaryResponse,
+    UserSessionResponse,
     VivaCodeDetailsResponse,
     VivaSessionResponse,
 )
@@ -98,3 +99,12 @@ async def get_session_results(
 ):
     res = await handler.handle_get_session_summary(session_id, db, current_user)
     return success_response(data=res, message="Session results retrieved successfully")
+
+
+@router.get("/sessions", response_model=SuccessResponse[list[UserSessionResponse]])
+async def get_user_sessions(
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    res = await handler.handle_get_user_sessions(db, current_user)
+    return success_response(data=res, message="Your joined vivas retrieved successfully")

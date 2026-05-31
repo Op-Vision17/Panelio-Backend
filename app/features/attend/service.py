@@ -15,6 +15,7 @@ from app.features.attend.schema import (
     QuestionListResponse,
     SessionAnswerSummary,
     SessionSummaryResponse,
+    UserSessionResponse,
     VivaCodeDetailsResponse,
     VivaSessionResponse,
 )
@@ -455,3 +456,27 @@ async def get_session_summary(
         overall_score=session.overall_score,
         answers=summaries,
     )
+
+
+async def get_user_sessions(
+    db, user_id: uuid.UUID
+) -> list[UserSessionResponse]:
+    dao = AttendDAO(db)
+    sessions = await dao.get_sessions_by_user(user_id)
+
+    return [
+        UserSessionResponse(
+            session_id=s.id,
+            viva_id=s.viva_id,
+            viva_name=s.viva.name,
+            viva_code=s.viva.code,
+            viva_start_time=s.viva.start_time,
+            viva_end_time=s.viva.end_time,
+            status=s.status,
+            joined_at=s.joined_at,
+            started_at=s.started_at,
+            completed_at=s.completed_at,
+            overall_score=s.overall_score,
+        )
+        for s in sessions
+    ]
