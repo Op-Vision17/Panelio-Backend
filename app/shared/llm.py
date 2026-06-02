@@ -129,11 +129,11 @@ async def evaluate_answer(
         f"Question: {question_text}\n"
         f"Expected Correct Answer: {correct_answer}\n"
         f"Candidate's Answer: {user_answer}\n\n"
-        "Evaluate the answer out of 100 points (0.0 to 100.0). Be objective but constructive. "
-        "Provide a rating (float between 0.0 and 100.0), and detailed feedback explaining your rating.\n"
+        "Evaluate the answer out of 10 points (0.0 to 10.0). Be objective but constructive. "
+        "Provide a rating (float between 0.0 and 10.0), and detailed feedback explaining your rating.\n"
         "You must respond ONLY with a JSON object in this format:\n"
         "{\n"
-        '  "rating": <float between 0.0 and 100.0>,\n'
+        '  "rating": <float between 0.0 and 10.0>,\n'
         '  "feedback": "<string providing clear constructive feedback>"\n'
         "}"
     )

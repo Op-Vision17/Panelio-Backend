@@ -391,19 +391,28 @@ async def process_audio_in_background(
         # Check if all questions have been answered and processed
         answers = await dao.get_answers_for_session(session_id)
 
-        # A session is completed if all questions of the viva have answers AND all answers have been rated (not null)
-        all_questions_answered = len(answers) == len(questions)
-        all_evaluations_done = all(a.rating is not None for a in answers)
-
-        if all_questions_answered and all_evaluations_done:
-            session.status = "completed"
-            session.completed_at = datetime.now(timezone.utc)
-            total_rating = sum(a.rating for a in answers)
+        # If the session is already completed (e.g. finished early manually), recalculate score based on current rated answers
+        if session.status == "completed":
+            total_rating = sum(a.rating for a in answers if a.rating is not None)
             session.overall_score = round(total_rating / len(questions), 2)
             await dao.update_session(session)
             logger.info(
-                f"Session {session_id} marked as COMPLETED. Score: {session.overall_score}"
+                f"Session {session_id} score updated after manual completion. Score: {session.overall_score}"
             )
+        else:
+            # A session is completed if all questions of the viva have answers AND all answers have been rated (not null)
+            all_questions_answered = len(answers) == len(questions)
+            all_evaluations_done = all(a.rating is not None for a in answers)
+
+            if all_questions_answered and all_evaluations_done:
+                session.status = "completed"
+                session.completed_at = datetime.now(timezone.utc)
+                total_rating = sum(a.rating for a in answers)
+                session.overall_score = round(total_rating / len(questions), 2)
+                await dao.update_session(session)
+                logger.info(
+                    f"Session {session_id} marked as COMPLETED. Score: {session.overall_score}"
+                )
 
 
 async def get_session_summary(
@@ -480,3 +489,53 @@ async def get_user_sessions(
         )
         for s in sessions
     ]
+
+
+async def finish_session(
+    db, session_id: uuid.UUID, user_id: uuid.UUID
+) -> VivaSessionResponse:
+    dao = AttendDAO(db)
+    session = await dao.get_session_by_id(session_id)
+    if not session or session.user_id != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Viva session not found"
+        )
+
+    if session.status == "completed":
+        return VivaSessionResponse.model_validate(session)
+
+    if session.status == "joined":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot finish a session that has not started yet",
+        )
+
+    session.status = "completed"
+    session.completed_at = datetime.now(timezone.utc)
+
+    # Calculate overall score for what has been answered and evaluated so far
+    answers = await dao.get_answers_for_session(session.id)
+    questions = await dao.get_questions_by_viva(session.viva_id)
+
+    if questions:
+        # Sum of ratings of answers (only completed ones, treating missing/processing ones as 0.0 for now)
+        total_score = sum(a.rating for a in answers if a.rating is not None)
+        session.overall_score = round(total_score / len(questions), 2)
+    else:
+        session.overall_score = 0.0
+
+    session = await dao.update_session(session)
+    return VivaSessionResponse.model_validate(session)
+
+
+async def get_session(
+    db, session_id: uuid.UUID, user_id: uuid.UUID
+) -> VivaSessionResponse:
+    dao = AttendDAO(db)
+    session = await dao.get_session_by_id(session_id)
+    if not session or session.user_id != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Viva session not found"
+        )
+    await check_and_enforce_session_expiration(db, session)
+    return VivaSessionResponse.model_validate(session)

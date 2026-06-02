@@ -53,6 +53,18 @@ async def start_session(
 
 
 @router.get(
+    "/sessions/{session_id}", response_model=SuccessResponse[VivaSessionResponse]
+)
+async def get_session(
+    session_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    res = await handler.handle_get_session(session_id, db, current_user)
+    return success_response(data=res, message="Viva session retrieved successfully")
+
+
+@router.get(
     "/sessions/{session_id}/questions",
     response_model=SuccessResponse[QuestionListResponse],
 )
@@ -108,3 +120,15 @@ async def get_user_sessions(
 ):
     res = await handler.handle_get_user_sessions(db, current_user)
     return success_response(data=res, message="Your joined vivas retrieved successfully")
+
+
+@router.post(
+    "/sessions/{session_id}/finish", response_model=SuccessResponse[VivaSessionResponse]
+)
+async def finish_session(
+    session_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    res = await handler.handle_finish_session(session_id, db, current_user)
+    return success_response(data=res, message="Viva session finished successfully")

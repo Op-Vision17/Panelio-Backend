@@ -26,6 +26,8 @@ class VivaSessionResponse(BaseModel):
     joined_at: datetime
     started_at: Optional[datetime] = None
     expires_at: Optional[datetime] = None
+    completed_at: Optional[datetime] = None
+    overall_score: Optional[float] = None
 
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 

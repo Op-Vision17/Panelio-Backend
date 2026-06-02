@@ -51,3 +51,11 @@ async def handle_get_session_summary(
 
 async def handle_get_user_sessions(db: AsyncSession, current_user):
     return await service.get_user_sessions(db, current_user.id)
+
+
+async def handle_finish_session(session_id: uuid.UUID, db: AsyncSession, current_user):
+    return await service.finish_session(db, session_id, current_user.id)
+
+
+async def handle_get_session(session_id: uuid.UUID, db: AsyncSession, current_user):
+    return await service.get_session(db, session_id, current_user.id)
