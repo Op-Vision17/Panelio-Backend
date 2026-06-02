@@ -11,9 +11,10 @@ class RedisClient:
         if cls._instance is None:
             if settings.UPSTASH_REDIS_REST_URL and settings.UPSTASH_REDIS_REST_TOKEN:
                 from upstash_redis.asyncio import Redis
+
                 cls._instance = Redis(
                     url=settings.UPSTASH_REDIS_REST_URL,
-                    token=settings.UPSTASH_REDIS_REST_TOKEN
+                    token=settings.UPSTASH_REDIS_REST_TOKEN,
                 )
             else:
                 cls._instance = await redis.from_url(

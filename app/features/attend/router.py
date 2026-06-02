@@ -119,7 +119,9 @@ async def get_user_sessions(
     current_user=Depends(get_current_user),
 ):
     res = await handler.handle_get_user_sessions(db, current_user)
-    return success_response(data=res, message="Your joined vivas retrieved successfully")
+    return success_response(
+        data=res, message="Your joined vivas retrieved successfully"
+    )
 
 
 @router.post(

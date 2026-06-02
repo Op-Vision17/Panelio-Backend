@@ -48,7 +48,6 @@ async def delete_question(
     return await handler.handle_delete_question(question_id, db, current_user)
 
 
-
 @router.post("/{question_id}/improve", response_model=SuccessResponse[QuestionBase])
 async def improve_question(
     question_id: uuid.UUID,
