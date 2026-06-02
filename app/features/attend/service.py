@@ -463,6 +463,7 @@ async def get_session_summary(
         started_at=session.started_at,
         completed_at=session.completed_at,
         overall_score=session.overall_score,
+        attendee_email=session.user.email if session.user else "unknown",
         answers=summaries,
     )
 

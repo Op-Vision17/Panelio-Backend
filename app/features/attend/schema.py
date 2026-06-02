@@ -66,6 +66,7 @@ class SessionSummaryResponse(BaseModel):
     started_at: Optional[datetime] = None
     completed_at: Optional[datetime] = None
     overall_score: Optional[float] = None
+    attendee_email: Optional[str] = None
     answers: List[SessionAnswerSummary]
 
 
