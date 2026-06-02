@@ -21,9 +21,11 @@ class Viva(Base):
     code: Mapped[str] = mapped_column(
         String(6), unique=True, nullable=False, index=True
     )
-    start_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
-    end_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
-    duration: Mapped[int] = mapped_column(Integer, default=15, nullable=True)
+    start_time: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+    end_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    duration: Mapped[int] = mapped_column(Integer, default=15, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )

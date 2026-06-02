@@ -5,10 +5,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.features.questions.dao import QuestionDAO
 from app.features.questions.model import Question
-from app.features.questions.schema import (
-    QuestionImproveRequest,
-    QuestionUpdate,
-)
+from app.features.questions.schema import QuestionImproveRequest, QuestionUpdate
+from app.features.vivas.service import check_viva_started
 from app.shared.llm import improve_question as llm_improve_question
 
 
@@ -25,6 +23,12 @@ async def update_question(
     if question.viva.owner_id != user_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized"
+        )
+
+    if await check_viva_started(db, question.viva):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot edit questions after the viva has started",
         )
 
     update_data = data.model_dump(exclude_unset=True)
@@ -47,8 +51,13 @@ async def delete_question(db: AsyncSession, question_id: uuid.UUID, user_id: uui
             status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized"
         )
 
-    await q_dao.delete(question)
+    if await check_viva_started(db, question.viva):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot delete questions after the viva has started",
+        )
 
+    await q_dao.delete(question)
 
 
 async def improve_existing_question(
@@ -67,6 +76,12 @@ async def improve_existing_question(
     if question.viva.owner_id != user_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized"
+        )
+
+    if await check_viva_started(db, question.viva):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot edit questions after the viva has started",
         )
 
     # Call LLM to improve question

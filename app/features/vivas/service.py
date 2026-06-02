@@ -27,7 +27,52 @@ async def generate_viva_code(db: AsyncSession) -> str:
             return code
 
 
+async def check_viva_started(db: AsyncSession, viva: Viva) -> bool:
+    from datetime import datetime, timezone
+
+    from sqlalchemy import select
+
+    from app.features.attend.model import VivaSession
+
+    utc_now = datetime.now(timezone.utc)
+    if viva.start_time and utc_now >= viva.start_time:
+        return True
+
+    stmt = select(VivaSession).where(
+        VivaSession.viva_id == viva.id,
+        VivaSession.status.in_(["started", "completed"]),
+    )
+    result = await db.execute(stmt)
+    return result.scalars().first() is not None
+
+
+def validate_viva_times(start_time, end_time, duration: int) -> None:
+    if start_time and end_time:
+        from datetime import timezone
+
+        st = start_time
+        et = end_time
+        if st.tzinfo is not None and et.tzinfo is None:
+            et = et.replace(tzinfo=timezone.utc)
+        elif st.tzinfo is None and et.tzinfo is not None:
+            st = st.replace(tzinfo=timezone.utc)
+
+        if et <= st:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="End time must be greater than start time",
+            )
+        if (et - st).total_seconds() < duration * 60:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"The difference between start time and end time must be at least {duration} minutes",
+            )
+
+
 async def create_viva(db: AsyncSession, data: VivaCreate, user_id) -> Viva:
+    duration = data.duration if data.duration is not None else 15
+    validate_viva_times(data.start_time, data.end_time, duration)
+
     code = await generate_viva_code(db)
     viva = Viva(
         owner_id=user_id,
@@ -35,7 +80,7 @@ async def create_viva(db: AsyncSession, data: VivaCreate, user_id) -> Viva:
         code=code,
         start_time=data.start_time,
         end_time=data.end_time,
-        duration=data.duration,
+        duration=duration,
     )
     viva_dao = VivaDAO(db)
     return await viva_dao.create(viva)
@@ -65,6 +110,18 @@ async def update_viva(db: AsyncSession, viva_id, data: VivaUpdate, user_id) -> V
             status_code=status.HTTP_404_NOT_FOUND, detail="Viva not found"
         )
 
+    if await check_viva_started(db, viva):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot edit viva after it has started",
+        )
+
+    new_start_time = data.start_time if data.start_time is not None else viva.start_time
+    new_end_time = data.end_time if data.end_time is not None else viva.end_time
+    new_duration = data.duration if data.duration is not None else (viva.duration or 15)
+
+    validate_viva_times(new_start_time, new_end_time, new_duration)
+
     if data.name is not None:
         viva.name = data.name
     if data.start_time is not None:
@@ -85,6 +142,12 @@ async def delete_viva(db: AsyncSession, viva_id, user_id):
             status_code=status.HTTP_404_NOT_FOUND, detail="Viva not found"
         )
 
+    if await check_viva_started(db, viva):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot delete viva after it has started",
+        )
+
     await viva_dao.delete(viva)
 
 
@@ -100,6 +163,12 @@ async def create_viva_question(
     if viva.owner_id != user_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized"
+        )
+
+    if await check_viva_started(db, viva):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot add questions to viva after it has started",
         )
 
     new_question = Question(
@@ -143,6 +212,12 @@ async def generate_viva_questions(
     if viva.owner_id != user_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized"
+        )
+
+    if await check_viva_started(db, viva):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot generate questions for viva after it has started",
         )
 
     # Call LLM to generate questions

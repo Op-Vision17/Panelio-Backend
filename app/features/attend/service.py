@@ -467,9 +467,7 @@ async def get_session_summary(
     )
 
 
-async def get_user_sessions(
-    db, user_id: uuid.UUID
-) -> list[UserSessionResponse]:
+async def get_user_sessions(db, user_id: uuid.UUID) -> list[UserSessionResponse]:
     dao = AttendDAO(db)
     sessions = await dao.get_sessions_by_user(user_id)
 

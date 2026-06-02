@@ -70,10 +70,7 @@ class VivaDAO:
         return question
 
     async def get_questions_by_viva_id(self, viva_id: uuid.UUID) -> list[Question]:
-        stmt = (
-            select(Question)
-            .where(Question.viva_id == viva_id)
-        )
+        stmt = select(Question).where(Question.viva_id == viva_id)
         result = await self.db.execute(stmt)
         return list(result.scalars().all())
 
