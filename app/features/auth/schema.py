@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 
 class SendOTPRequest(BaseModel):
@@ -20,6 +20,12 @@ class TokenResponse(BaseModel):
     token_type: str = "bearer"
 
 
+class VerifyOTPResponse(BaseModel):
+    access_token: str
+    refresh_token: str
+    is_onboarded: bool
+
+
 class RefreshRequest(BaseModel):
     refresh_token: str
 
@@ -37,7 +43,31 @@ from pydantic import ConfigDict
 class UserResponse(BaseModel):
     id: uuid.UUID
     email: EmailStr
+    name: str
+    phone_number: str
+    enrollment_number: str
+    is_onboarded: bool
     profile_photo_url: str | None = None
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+    @field_validator("phone_number")
+    @classmethod
+    def validate_phone_number(cls, v: str) -> str:
+        if not v.isdigit() or len(v) != 10:
+            raise ValueError("Phone number must contain exactly 10 digits")
+        return v
+
+
+class OnboardingRequest(BaseModel):
+    name: str = Field(..., min_length=1)
+    phone_number: str
+    enrollment_number: str = Field(..., min_length=1)
+
+    @field_validator("phone_number")
+    @classmethod
+    def validate_phone_number(cls, v: str) -> str:
+        if not v.isdigit() or len(v) != 10:
+            raise ValueError("Phone number must contain exactly 10 digits")
+        return v

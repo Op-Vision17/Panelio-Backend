@@ -14,7 +14,7 @@ from app.features.attend.schema import (
     VivaCodeDetailsResponse,
     VivaSessionResponse,
 )
-from app.shared.dependencies import get_current_user
+from app.shared.dependencies import get_current_onboarded_user
 from app.shared.responses import SuccessResponse, success_response
 
 router = APIRouter()
@@ -24,7 +24,7 @@ router = APIRouter()
 async def get_viva_by_code(
     code: str,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user),
+    current_user=Depends(get_current_onboarded_user),
 ):
     res = await handler.handle_get_viva_by_code(code, db, current_user)
     return success_response(data=res, message="Viva details retrieved successfully")
@@ -34,7 +34,7 @@ async def get_viva_by_code(
 async def join_viva(
     data: JoinVivaRequest,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user),
+    current_user=Depends(get_current_onboarded_user),
 ):
     res = await handler.handle_join_viva(data, db, current_user)
     return success_response(data=res, message="Joined viva successfully")
@@ -46,7 +46,7 @@ async def join_viva(
 async def start_session(
     session_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user),
+    current_user=Depends(get_current_onboarded_user),
 ):
     res = await handler.handle_start_session(session_id, db, current_user)
     return success_response(data=res, message="Viva session started successfully")
@@ -58,7 +58,7 @@ async def start_session(
 async def get_session(
     session_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user),
+    current_user=Depends(get_current_onboarded_user),
 ):
     res = await handler.handle_get_session(session_id, db, current_user)
     return success_response(data=res, message="Viva session retrieved successfully")
@@ -71,7 +71,7 @@ async def get_session(
 async def get_session_questions(
     session_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user),
+    current_user=Depends(get_current_onboarded_user),
 ):
     res = await handler.handle_get_session_questions(session_id, db, current_user)
     return success_response(data=res, message="Questions retrieved successfully")
@@ -86,7 +86,7 @@ async def submit_answer(
     question_id: uuid.UUID,
     audio_file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user),
+    current_user=Depends(get_current_onboarded_user),
     background_tasks: BackgroundTasks = BackgroundTasks(),
 ):
     res = await handler.handle_submit_answer(
@@ -107,7 +107,7 @@ async def submit_answer(
 async def get_session_results(
     session_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user),
+    current_user=Depends(get_current_onboarded_user),
 ):
     res = await handler.handle_get_session_summary(session_id, db, current_user)
     return success_response(data=res, message="Session results retrieved successfully")
@@ -116,7 +116,7 @@ async def get_session_results(
 @router.get("/sessions", response_model=SuccessResponse[list[UserSessionResponse]])
 async def get_user_sessions(
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user),
+    current_user=Depends(get_current_onboarded_user),
 ):
     res = await handler.handle_get_user_sessions(db, current_user)
     return success_response(
@@ -130,7 +130,7 @@ async def get_user_sessions(
 async def finish_session(
     session_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user),
+    current_user=Depends(get_current_onboarded_user),
 ):
     res = await handler.handle_finish_session(session_id, db, current_user)
     return success_response(data=res, message="Viva session finished successfully")

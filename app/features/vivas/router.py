@@ -17,7 +17,7 @@ from app.features.vivas.schema import (
     VivaResponse,
     VivaUpdate,
 )
-from app.shared.dependencies import get_current_user
+from app.shared.dependencies import get_current_onboarded_user
 from app.shared.responses import SuccessResponse, success_response
 
 router = APIRouter()
@@ -31,7 +31,7 @@ router = APIRouter()
 async def create_viva(
     data: VivaCreate,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user),
+    current_user=Depends(get_current_onboarded_user),
 ):
     res = await handler.handle_create_viva(data, db, current_user)
     return success_response(data=res, message="Viva created successfully")
@@ -39,7 +39,7 @@ async def create_viva(
 
 @router.get("", response_model=SuccessResponse[List[VivaResponse]])
 async def get_vivas(
-    db: AsyncSession = Depends(get_db), current_user=Depends(get_current_user)
+    db: AsyncSession = Depends(get_db), current_user=Depends(get_current_onboarded_user)
 ):
     res = await handler.handle_get_vivas(db, current_user)
     return success_response(data=res, message="Vivas retrieved successfully")
@@ -49,7 +49,7 @@ async def get_vivas(
 async def get_viva(
     viva_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user),
+    current_user=Depends(get_current_onboarded_user),
 ):
     res = await handler.handle_get_viva(viva_id, db, current_user)
     return success_response(data=res, message="Viva retrieved successfully")
@@ -60,7 +60,7 @@ async def update_viva(
     viva_id: uuid.UUID,
     data: VivaUpdate,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user),
+    current_user=Depends(get_current_onboarded_user),
 ):
     res = await handler.handle_update_viva(viva_id, data, db, current_user)
     return success_response(data=res, message="Viva updated successfully")
@@ -70,7 +70,7 @@ async def update_viva(
 async def delete_viva(
     viva_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user),
+    current_user=Depends(get_current_onboarded_user),
 ):
     return await handler.handle_delete_viva(viva_id, db, current_user)
 
@@ -84,7 +84,7 @@ async def create_viva_question(
     viva_id: uuid.UUID,
     data: QuestionCreate,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user),
+    current_user=Depends(get_current_onboarded_user),
 ):
     res = await handler.handle_create_viva_question(viva_id, data, db, current_user)
     return success_response(data=res, message="Question created successfully")
@@ -97,7 +97,7 @@ async def create_viva_question(
 async def get_viva_questions(
     viva_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user),
+    current_user=Depends(get_current_onboarded_user),
 ):
     res = await handler.handle_get_viva_questions(viva_id, db, current_user)
     return success_response(data=res, message="Questions retrieved successfully")
@@ -112,7 +112,7 @@ async def generate_viva_questions_topic(
     viva_id: uuid.UUID,
     data: QuestionsGenerateTopicRequest,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user),
+    current_user=Depends(get_current_onboarded_user),
 ):
     res = await handler.handle_generate_viva_questions_from_topic(
         viva_id, data, db, current_user
@@ -133,7 +133,7 @@ async def generate_viva_questions_document(
     doc_text: Optional[str] = Form(None),
     doc_file: Optional[UploadFile] = File(None),
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user),
+    current_user=Depends(get_current_onboarded_user),
 ):
     res = await handler.handle_generate_viva_questions_from_document(
         viva_id=viva_id,
@@ -155,7 +155,7 @@ async def generate_viva_questions_document(
 async def get_viva_sessions(
     viva_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user),
+    current_user=Depends(get_current_onboarded_user),
 ):
     res = await handler.handle_get_viva_sessions(viva_id, db, current_user)
     return success_response(

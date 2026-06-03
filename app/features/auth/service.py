@@ -15,6 +15,7 @@ from app.core.security import (
 )
 from app.features.auth.dao import AuthDAO
 from app.features.auth.model import RefreshToken, User
+from app.features.auth.schema import OnboardingRequest
 from app.shared import supabase
 from app.shared.exceptions import BadRequestError, UnauthorizedError
 
@@ -42,7 +43,13 @@ async def get_or_create_user(email: str, db: AsyncSession) -> User:
     user = await auth_dao.get_user_by_email(email)
 
     if not user:
-        user = User(email=email)
+        user = User(
+            email=email,
+            name="",
+            phone_number="0000000000",
+            enrollment_number="",
+            is_onboarded=False,
+        )
         user = await auth_dao.create_user(user)
 
     return user
@@ -140,4 +147,17 @@ async def update_profile_photo(user: User, file: UploadFile, db: AsyncSession) -
     auth_dao = AuthDAO(db)
     await auth_dao.save_changes()
 
+    return user
+
+
+async def onboard_user(
+    user: User, onboarding_data: OnboardingRequest, db: AsyncSession
+) -> User:
+    user.name = onboarding_data.name
+    user.phone_number = onboarding_data.phone_number
+    user.enrollment_number = onboarding_data.enrollment_number
+    user.is_onboarded = True
+
+    auth_dao = AuthDAO(db)
+    await auth_dao.save_changes()
     return user

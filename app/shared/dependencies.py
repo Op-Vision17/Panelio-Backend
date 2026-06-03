@@ -31,3 +31,14 @@ async def get_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found"
         )
     return user
+
+
+async def get_current_onboarded_user(
+    current_user: User = Depends(get_current_user),
+) -> User:
+    if not current_user.is_onboarded:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Onboarding is required to access this feature.",
+        )
+    return current_user

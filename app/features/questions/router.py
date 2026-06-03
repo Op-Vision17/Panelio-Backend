@@ -11,7 +11,7 @@ from app.features.questions.schema import (
     QuestionResponse,
     QuestionUpdate,
 )
-from app.shared.dependencies import get_current_user
+from app.shared.dependencies import get_current_onboarded_user
 from app.shared.responses import SuccessResponse, success_response
 
 router = APIRouter()
@@ -22,7 +22,7 @@ async def update_question(
     question_id: uuid.UUID,
     data: QuestionUpdate,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user),
+    current_user=Depends(get_current_onboarded_user),
 ):
     res = await handler.handle_update_question(question_id, data, db, current_user)
     return success_response(data=res, message="Question updated successfully")
@@ -33,7 +33,7 @@ async def update_question_put(
     question_id: uuid.UUID,
     data: QuestionUpdate,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user),
+    current_user=Depends(get_current_onboarded_user),
 ):
     res = await handler.handle_update_question(question_id, data, db, current_user)
     return success_response(data=res, message="Question updated successfully")
@@ -43,7 +43,7 @@ async def update_question_put(
 async def delete_question(
     question_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user),
+    current_user=Depends(get_current_onboarded_user),
 ):
     return await handler.handle_delete_question(question_id, db, current_user)
 
@@ -53,7 +53,7 @@ async def improve_question(
     question_id: uuid.UUID,
     data: QuestionImproveRequest,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user),
+    current_user=Depends(get_current_onboarded_user),
 ):
     res = await handler.handle_improve_question(question_id, data, db, current_user)
     return success_response(data=res, message="Question improved successfully")

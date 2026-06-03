@@ -6,14 +6,16 @@ from app.core.redis import get_redis
 from app.features.auth import handler
 from app.features.auth.schema import (
     LogoutRequest,
+    OnboardingRequest,
     RefreshRequest,
     SendOTPRequest,
     SendOTPResponse,
     TokenResponse,
     UserResponse,
     VerifyOTPRequest,
+    VerifyOTPResponse,
 )
-from app.shared.dependencies import get_current_user
+from app.shared.dependencies import get_current_onboarded_user, get_current_user
 from app.shared.responses import SuccessResponse, success_response
 
 router = APIRouter()
@@ -25,7 +27,7 @@ async def send_otp(body: SendOTPRequest, redis=Depends(get_redis)):
     return success_response(data=res, message=res.message)
 
 
-@router.post("/verify-otp", response_model=SuccessResponse[TokenResponse])
+@router.post("/verify-otp", response_model=SuccessResponse[VerifyOTPResponse])
 async def verify_otp(
     body: VerifyOTPRequest, redis=Depends(get_redis), db: AsyncSession = Depends(get_db)
 ):
@@ -59,7 +61,17 @@ async def get_me(current_user=Depends(get_current_user)):
 async def upload_profile_photo(
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user),
+    current_user=Depends(get_current_onboarded_user),
 ):
     res = await handler.handle_upload_profile_photo(file, db, current_user)
     return success_response(data=res, message="Profile photo uploaded successfully")
+
+
+@router.post("/onboard", response_model=SuccessResponse[UserResponse])
+async def onboard(
+    body: OnboardingRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    res = await handler.handle_onboard(body, db, current_user)
+    return success_response(data=res, message="User onboarded successfully")

@@ -3,11 +3,13 @@ from fastapi import HTTPException, UploadFile, status
 from app.features.auth import service
 from app.features.auth.schema import (
     LogoutRequest,
+    OnboardingRequest,
     RefreshRequest,
     SendOTPRequest,
     SendOTPResponse,
     TokenResponse,
     VerifyOTPRequest,
+    VerifyOTPResponse,
 )
 from app.shared.email import send_otp_email
 from app.shared.exceptions import BadRequestError
@@ -23,7 +25,7 @@ async def handle_send_otp(body: SendOTPRequest, redis) -> SendOTPResponse:
     return SendOTPResponse(message="OTP sent successfully")
 
 
-async def handle_verify_otp(body: VerifyOTPRequest, redis, db) -> TokenResponse:
+async def handle_verify_otp(body: VerifyOTPRequest, redis, db) -> VerifyOTPResponse:
     emg = "user@example.com"
     if body.email == emg and body.otp == "string":
         is_valid = True
@@ -36,7 +38,11 @@ async def handle_verify_otp(body: VerifyOTPRequest, redis, db) -> TokenResponse:
     user = await service.get_or_create_user(body.email, db)
     access_token, refresh_token = await service.create_token_pair(str(user.id), db)
 
-    return TokenResponse(access_token=access_token, refresh_token=refresh_token)
+    return VerifyOTPResponse(
+        access_token=access_token,
+        refresh_token=refresh_token,
+        is_onboarded=user.is_onboarded,
+    )
 
 
 async def handle_refresh(body: RefreshRequest, db) -> TokenResponse:
@@ -57,3 +63,7 @@ async def handle_get_me(current_user):
 
 async def handle_upload_profile_photo(file: UploadFile, db, current_user):
     return await service.update_profile_photo(current_user, file, db)
+
+
+async def handle_onboard(body: OnboardingRequest, db, current_user):
+    return await service.onboard_user(current_user, body, db)
