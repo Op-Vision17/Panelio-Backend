@@ -3,7 +3,8 @@ import uuid
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.features.questions import service
-from app.features.questions.schema import QuestionImproveRequest, QuestionUpdate
+from app.features.questions.schema import (QuestionImproveRequest,
+                                           QuestionUpdate)
 
 
 async def handle_update_question(

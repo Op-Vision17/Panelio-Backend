@@ -5,7 +5,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.features.questions.dao import QuestionDAO
 from app.features.questions.model import Question
-from app.features.questions.schema import QuestionImproveRequest, QuestionUpdate
+from app.features.questions.schema import (QuestionImproveRequest,
+                                           QuestionUpdate)
 from app.features.vivas.service import check_viva_started
 from app.shared.llm import improve_question as llm_improve_question
 

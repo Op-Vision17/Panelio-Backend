@@ -6,16 +6,11 @@ from datetime import datetime, timezone
 from fastapi import UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.security import (
-    create_access_token,
-    create_refresh_token,
-    hash_otp,
-    verify_otp_hash,
-    verify_token,
-)
+from app.core.security import (create_access_token, create_refresh_token,
+                               hash_otp, verify_otp_hash, verify_token)
 from app.features.auth.dao import AuthDAO
 from app.features.auth.model import RefreshToken, User
-from app.features.auth.schema import OnboardingRequest
+from app.features.auth.schema import OnboardingRequest, UpdateUserRequest
 from app.shared import supabase
 from app.shared.exceptions import BadRequestError, UnauthorizedError
 
@@ -157,6 +152,18 @@ async def onboard_user(
     user.phone_number = onboarding_data.phone_number
     user.enrollment_number = onboarding_data.enrollment_number
     user.is_onboarded = True
+
+    auth_dao = AuthDAO(db)
+    await auth_dao.save_changes()
+    return user
+
+
+async def update_user(
+    user: User, update_data: UpdateUserRequest, db: AsyncSession
+) -> User:
+    update_dict = update_data.model_dump(exclude_unset=True)
+    for field, value in update_dict.items():
+        setattr(user, field, value)
 
     auth_dao = AuthDAO(db)
     await auth_dao.save_changes()

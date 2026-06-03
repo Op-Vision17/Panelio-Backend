@@ -1,16 +1,11 @@
 from fastapi import HTTPException, UploadFile, status
 
 from app.features.auth import service
-from app.features.auth.schema import (
-    LogoutRequest,
-    OnboardingRequest,
-    RefreshRequest,
-    SendOTPRequest,
-    SendOTPResponse,
-    TokenResponse,
-    VerifyOTPRequest,
-    VerifyOTPResponse,
-)
+from app.features.auth.schema import (LogoutRequest, OnboardingRequest,
+                                      RefreshRequest, SendOTPRequest,
+                                      SendOTPResponse, TokenResponse,
+                                      UpdateUserRequest, VerifyOTPRequest,
+                                      VerifyOTPResponse)
 from app.shared.email import send_otp_email
 from app.shared.exceptions import BadRequestError
 
@@ -67,3 +62,7 @@ async def handle_upload_profile_photo(file: UploadFile, db, current_user):
 
 async def handle_onboard(body: OnboardingRequest, db, current_user):
     return await service.onboard_user(current_user, body, db)
+
+
+async def handle_update_me(body: UpdateUserRequest, db, current_user):
+    return await service.update_user(current_user, body, db)

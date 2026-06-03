@@ -7,13 +7,10 @@ from pypdf import PdfReader
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.features.vivas import service
-from app.features.vivas.schema import (
-    QuestionCreate,
-    QuestionsGenerateRequest,
-    QuestionsGenerateTopicRequest,
-    VivaCreate,
-    VivaUpdate,
-)
+from app.features.vivas.schema import (QuestionCreate,
+                                       QuestionsGenerateRequest,
+                                       QuestionsGenerateTopicRequest,
+                                       VivaCreate, VivaUpdate)
 
 
 async def handle_create_viva(data: VivaCreate, db: AsyncSession, current_user):

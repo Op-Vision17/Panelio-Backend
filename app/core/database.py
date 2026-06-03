@@ -1,4 +1,5 @@
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import (AsyncSession, async_sessionmaker,
+                                    create_async_engine)
 from sqlalchemy.orm import DeclarativeBase
 
 from app.core.config import settings
@@ -20,7 +21,6 @@ async def get_db():
 
 
 from app.features.attend.model import AttendeeAnswer, VivaSession
-
 # databses models loding
 from app.features.auth.model import RefreshToken, User
 from app.features.questions.model import Question

@@ -8,12 +8,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.features.questions.model import Question
 from app.features.vivas.dao import VivaDAO
 from app.features.vivas.model import Viva
-from app.features.vivas.schema import (
-    QuestionCreate,
-    QuestionsGenerateRequest,
-    VivaCreate,
-    VivaUpdate,
-)
+from app.features.vivas.schema import (QuestionCreate,
+                                       QuestionsGenerateRequest, VivaCreate,
+                                       VivaUpdate)
 from app.shared.llm import generate_questions as llm_generate_questions
 
 

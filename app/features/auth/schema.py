@@ -71,3 +71,17 @@ class OnboardingRequest(BaseModel):
         if not v.isdigit() or len(v) != 10:
             raise ValueError("Phone number must contain exactly 10 digits")
         return v
+
+
+class UpdateUserRequest(BaseModel):
+    name: str | None = Field(None, min_length=1)
+    phone_number: str | None = None
+    enrollment_number: str | None = Field(None, min_length=1)
+
+    @field_validator("phone_number")
+    @classmethod
+    def validate_phone_number(cls, v: str | None) -> str | None:
+        if v is not None:
+            if not v.isdigit() or len(v) != 10:
+                raise ValueError("Phone number must contain exactly 10 digits")
+        return v

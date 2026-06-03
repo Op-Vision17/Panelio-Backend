@@ -4,18 +4,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.redis import get_redis
 from app.features.auth import handler
-from app.features.auth.schema import (
-    LogoutRequest,
-    OnboardingRequest,
-    RefreshRequest,
-    SendOTPRequest,
-    SendOTPResponse,
-    TokenResponse,
-    UserResponse,
-    VerifyOTPRequest,
-    VerifyOTPResponse,
-)
-from app.shared.dependencies import get_current_onboarded_user, get_current_user
+from app.features.auth.schema import (LogoutRequest, OnboardingRequest,
+                                      RefreshRequest, SendOTPRequest,
+                                      SendOTPResponse, TokenResponse,
+                                      UpdateUserRequest, UserResponse,
+                                      VerifyOTPRequest, VerifyOTPResponse)
+from app.shared.dependencies import (get_current_onboarded_user,
+                                     get_current_user)
 from app.shared.responses import SuccessResponse, success_response
 
 router = APIRouter()
@@ -75,3 +70,13 @@ async def onboard(
 ):
     res = await handler.handle_onboard(body, db, current_user)
     return success_response(data=res, message="User onboarded successfully")
+
+
+@router.patch("/me", response_model=SuccessResponse[UserResponse])
+async def update_me(
+    body: UpdateUserRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    res = await handler.handle_update_me(body, db, current_user)
+    return success_response(data=res, message="User profile updated successfully")

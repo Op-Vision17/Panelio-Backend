@@ -5,12 +5,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.features.questions import handler
-from app.features.questions.schema import (
-    QuestionBase,
-    QuestionImproveRequest,
-    QuestionResponse,
-    QuestionUpdate,
-)
+from app.features.questions.schema import (QuestionBase,
+                                           QuestionImproveRequest,
+                                           QuestionResponse, QuestionUpdate)
 from app.shared.dependencies import get_current_onboarded_user
 from app.shared.responses import SuccessResponse, success_response
 

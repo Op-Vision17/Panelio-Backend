@@ -7,16 +7,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.features.attend.schema import VivaAttendeeSessionResponse
 from app.features.vivas import handler
-from app.features.vivas.schema import (
-    QuestionCreate,
-    QuestionResponse,
-    QuestionsGenerateRequest,
-    QuestionsGenerateTopicRequest,
-    VivaCreate,
-    VivaDetailResponse,
-    VivaResponse,
-    VivaUpdate,
-)
+from app.features.vivas.schema import (QuestionCreate, QuestionResponse,
+                                       QuestionsGenerateRequest,
+                                       QuestionsGenerateTopicRequest,
+                                       VivaCreate, VivaDetailResponse,
+                                       VivaResponse, VivaUpdate)
 from app.shared.dependencies import get_current_onboarded_user
 from app.shared.responses import SuccessResponse, success_response
 

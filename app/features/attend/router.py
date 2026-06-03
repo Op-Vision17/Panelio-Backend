@@ -1,19 +1,17 @@
 import uuid
 
-from fastapi import APIRouter, BackgroundTasks, Depends, File, UploadFile, status
+from fastapi import (APIRouter, BackgroundTasks, Depends, File, UploadFile,
+                     status)
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.features.attend import handler
-from app.features.attend.schema import (
-    AnswerSubmitResponse,
-    JoinVivaRequest,
-    QuestionListResponse,
-    SessionSummaryResponse,
-    UserSessionResponse,
-    VivaCodeDetailsResponse,
-    VivaSessionResponse,
-)
+from app.features.attend.schema import (AnswerSubmitResponse, JoinVivaRequest,
+                                        QuestionListResponse,
+                                        SessionSummaryResponse,
+                                        UserSessionResponse,
+                                        VivaCodeDetailsResponse,
+                                        VivaSessionResponse)
 from app.shared.dependencies import get_current_onboarded_user
 from app.shared.responses import SuccessResponse, success_response
 

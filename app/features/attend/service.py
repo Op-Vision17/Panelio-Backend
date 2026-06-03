@@ -9,16 +9,13 @@ from fastapi import HTTPException, UploadFile, status
 from app.core.database import AsyncSessionLocal
 from app.features.attend.dao import AttendDAO
 from app.features.attend.model import AttendeeAnswer, VivaSession
-from app.features.attend.schema import (
-    AnswerSubmitResponse,
-    QuestionItem,
-    QuestionListResponse,
-    SessionAnswerSummary,
-    SessionSummaryResponse,
-    UserSessionResponse,
-    VivaCodeDetailsResponse,
-    VivaSessionResponse,
-)
+from app.features.attend.schema import (AnswerSubmitResponse, QuestionItem,
+                                        QuestionListResponse,
+                                        SessionAnswerSummary,
+                                        SessionSummaryResponse,
+                                        UserSessionResponse,
+                                        VivaCodeDetailsResponse,
+                                        VivaSessionResponse)
 from app.features.questions.model import Question
 from app.features.vivas.model import Viva
 from app.shared import audio, llm

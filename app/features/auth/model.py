@@ -1,5 +1,4 @@
 import uuid
-
 # from vivas.model import Viva
 from datetime import datetime, timezone
 
