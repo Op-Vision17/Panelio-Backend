@@ -19,6 +19,9 @@ class Settings(BaseSettings):
     SMTP_FROM_EMAIL: Optional[str] = None
     SMTP_FROM_NAME: str = "Panelio"
     GROQ_API_KEY: Optional[str] = None
+    SUPABASE_URL: Optional[str] = None
+    SUPABASE_KEY: Optional[str] = None
+    SUPABASE_BUCKET: str = "profile-photos"
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

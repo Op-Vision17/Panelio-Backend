@@ -37,6 +37,7 @@ from pydantic import ConfigDict
 class UserResponse(BaseModel):
     id: uuid.UUID
     email: EmailStr
+    profile_photo_url: str | None = None
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)

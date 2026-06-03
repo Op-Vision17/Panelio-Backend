@@ -3,6 +3,7 @@ import random
 import string
 from datetime import datetime, timezone
 
+from fastapi import UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import (
@@ -14,6 +15,7 @@ from app.core.security import (
 )
 from app.features.auth.dao import AuthDAO
 from app.features.auth.model import RefreshToken, User
+from app.shared import supabase
 from app.shared.exceptions import BadRequestError, UnauthorizedError
 
 
@@ -102,3 +104,40 @@ async def revoke_refresh_token(token: str, db: AsyncSession):
     if db_token:
         db_token.revoked = True
         await auth_dao.save_changes()
+
+
+MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
+ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
+
+
+async def update_profile_photo(user: User, file: UploadFile, db: AsyncSession) -> User:
+    filename = file.filename or "avatar.jpg"
+    ext = filename.split(".")[-1].lower() if "." in filename else ""
+    if ext not in ALLOWED_EXTENSIONS:
+        raise BadRequestError(
+            f"Unsupported file format. Supported formats: {', '.join(ALLOWED_EXTENSIONS)}"
+        )
+
+    content = await file.read()
+    if len(content) > MAX_FILE_SIZE:
+        raise BadRequestError("File size exceeds the 5MB limit.")
+
+    old_url = user.profile_photo_url
+
+    new_url = await supabase.upload_profile_photo(
+        user_id=str(user.id),
+        file_content=content,
+        filename=filename,
+        content_type=file.content_type or "image/jpeg",
+    )
+
+    if old_url and old_url != new_url:
+        old_path = supabase.extract_path_from_url(old_url)
+        if old_path:
+            await supabase.delete_profile_photo_by_path(old_path)
+
+    user.profile_photo_url = new_url
+    auth_dao = AuthDAO(db)
+    await auth_dao.save_changes()
+
+    return user

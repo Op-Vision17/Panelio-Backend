@@ -16,6 +16,9 @@ fmt:
 migrate:
 	poetry run alembic upgrade head
 
+current:
+	poetry run alembic current
+
 # Create a new database migration
 # Usage: make makemigrations m="Migration message"
 makemigrations:

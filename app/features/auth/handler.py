@@ -1,4 +1,4 @@
-from fastapi import HTTPException, status
+from fastapi import HTTPException, UploadFile, status
 
 from app.features.auth import service
 from app.features.auth.schema import (
@@ -53,3 +53,7 @@ async def handle_logout(body: LogoutRequest, db):
 
 async def handle_get_me(current_user):
     return current_user
+
+
+async def handle_upload_profile_photo(file: UploadFile, db, current_user):
+    return await service.update_profile_photo(current_user, file, db)

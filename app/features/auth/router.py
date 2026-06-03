@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, File, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -53,3 +53,13 @@ async def logout(
 async def get_me(current_user=Depends(get_current_user)):
     res = await handler.handle_get_me(current_user)
     return success_response(data=res, message="User profile retrieved successfully")
+
+
+@router.post("/profile-photo", response_model=SuccessResponse[UserResponse])
+async def upload_profile_photo(
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    res = await handler.handle_upload_profile_photo(file, db, current_user)
+    return success_response(data=res, message="Profile photo uploaded successfully")
