@@ -11,6 +11,7 @@ from app.core.database import Base, engine
 from app.core.redis import get_redis
 from app.features.attend.router import router as attend_router
 from app.features.auth.router import router as auth_router
+from app.features.practice.router import router as practice_router
 from app.features.questions.router import router as questions_router
 from app.features.vivas.router import router as vivas_router
 from app.shared.responses import error_response
@@ -84,6 +85,7 @@ app.include_router(auth_router, prefix="/auth", tags=["Auth"])
 app.include_router(vivas_router, prefix="/vivas", tags=["Vivas"])
 app.include_router(questions_router, prefix="/questions", tags=["Questions"])
 app.include_router(attend_router, prefix="/attend", tags=["Attend"])
+app.include_router(practice_router, prefix="/practice", tags=["Practice"])
 
 
 @app.get("/")

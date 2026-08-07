@@ -25,3 +25,5 @@ from app.features.attend.model import AttendeeAnswer, VivaSession
 from app.features.auth.model import RefreshToken, User
 from app.features.questions.model import Question
 from app.features.vivas.model import Viva
+from app.features.practice.model import PracticeInterview, PracticeSession, PracticeQuestionRemark
+

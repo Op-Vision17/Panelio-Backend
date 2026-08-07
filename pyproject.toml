@@ -25,6 +25,9 @@ email-validator = "^2.3.0"
 isort = "^8.0.1"
 black = "^26.5.0"
 upstash-redis = "^1.7.0"
+mediapipe = "^0.10.14"
+opencv-python-headless = "^4.10.0.84"
+numpy = "^1.26.4"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
