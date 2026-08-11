@@ -6,6 +6,11 @@ from fastapi import HTTPException, status
 from groq import AsyncGroq
 
 from app.core.config import settings
+from app.prompts.viva import (
+    build_evaluate_answer_prompt,
+    build_generate_questions_prompt,
+    build_improve_question_prompt,
+)
 
 logger = logging.getLogger(__name__)
 
