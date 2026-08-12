@@ -15,8 +15,13 @@ from app.core.redis import get_redis
 from app.features.practice import llm
 from app.features.practice.behavioral import BehavioralAnalyzer, aggregate_session_behavior
 from app.features.practice.dao import PracticeDAO
+from app.features.practice.langgraph.graph import (
+    initialize_session_thread,
+    submit_candidate_answer_thread,
+)
 from app.features.practice.model import PracticeInterview, PracticeQuestionRemark, PracticeSession
 from app.shared import audio
+
 
 logger = logging.getLogger(__name__)
 
@@ -160,24 +165,22 @@ async def start_practice_session(db, interview_id: uuid.UUID, user_id: uuid.UUID
     )
     session = await dao.create_session(session)
 
-    # Generate first question
-    first_question = await llm.generate_first_question(
+    # Initialize LangGraph thread for this session
+    graph_res = await initialize_session_thread(
+        session_id=str(session.id),
         job_description=interview.job_description,
         resume_text=interview.resume_text,
-        difficulty=interview.difficulty
+        difficulty=interview.difficulty,
+        max_topics=5
     )
 
-    # Initial session state schema
+    first_question = graph_res.get("current_question", "Could you please introduce yourself?")
+
+    # Initial session state cache schema for WS quick reference
     state = {
         "interview_id": str(interview_id),
         "user_id": str(user_id),
         "current_main_question": first_question,
-        "dialogue_history": [
-            {"role": "assistant", "content": first_question}
-        ],
-        "current_question_thread": [
-            {"role": "assistant", "content": first_question}
-        ],
         "followup_count": 0,
         "main_questions_asked": 1
     }
@@ -187,6 +190,7 @@ async def start_practice_session(db, interview_id: uuid.UUID, user_id: uuid.UUID
     await redis_client.set(f"practice:session:{session.id}", json.dumps(state))
 
     return session
+
 
 
 async def get_session_summary(db, session_id: uuid.UUID, user_id: uuid.UUID) -> Dict:
@@ -333,41 +337,27 @@ async def _execute_state_machine(db, session: PracticeSession, state: dict, user
     redis_client = await get_redis()
     dao = PracticeDAO(db)
 
-    # 1. Update active dialogue history
-    state["dialogue_history"].append({"role": "user", "content": user_answer})
-    state["current_question_thread"].append({"role": "user", "content": user_answer})
-
-    # Fetch interview context
-    interview = session.interview
-
-    # 2. Run Deciding Node
-    decision_data = await llm.evaluate_response_and_route(
-        job_description=interview.job_description,
-        resume_text=interview.resume_text,
-        dialogue_history=state["dialogue_history"],
-        latest_user_answer=user_answer,
-        followup_count=state["followup_count"],
-        difficulty=interview.difficulty
+    # Execute single-thread LangGraph state machine turn
+    graph_res = await submit_candidate_answer_thread(
+        session_id=str(session_id),
+        candidate_text=user_answer
     )
 
-    rating = decision_data.get("rating", 5.0)
-    feedback = decision_data.get("feedback", "Recorded.")
-    decision = decision_data.get("decision", "next_question")
-    next_question_text = decision_data.get("next_question_text", "")
+    rating = graph_res.get("last_rating", 5.0)
+    feedback = graph_res.get("last_feedback", "Recorded.")
+    decision = graph_res.get("last_decision", "next_question")
+    next_question_text = graph_res.get("current_question", "")
+    session_status = graph_res.get("session_status", "active")
 
-    # Broadcast answer evaluation results
+    # Broadcast answer evaluation results to WebSocket client
     await ws_manager.send_json(session_id, {
         "type": "answer_graded",
         "rating": rating,
         "feedback": feedback
     })
 
-    if decision == "followup" and state["followup_count"] < 2:
-        # Pushing a followup
-        state["followup_count"] += 1
-        state["dialogue_history"].append({"role": "assistant", "content": next_question_text})
-        state["current_question_thread"].append({"role": "assistant", "content": next_question_text})
-
+    if decision == "followup" and graph_res.get("followup_count", 0) <= 2 and session_status != "completed":
+        state["followup_count"] = graph_res.get("followup_count", 0)
         await redis_client.set(f"practice:session:{session_id}", json.dumps(state))
         await ws_manager.send_json(session_id, {
             "type": "new_question",
@@ -376,23 +366,16 @@ async def _execute_state_machine(db, session: PracticeSession, state: dict, user
         })
         return
 
-    # If decision is 'next_question' or 'end_interview' (or if we hit max followups):
-    # 3. Generate and save consolidated remark for the current topic block
-    consolidated_remark = await llm.generate_question_remark(
-        main_question=state["current_main_question"],
-        dialogue_thread=state["current_question_thread"]
-    )
-
+    # Record consolidated remark in PostgreSQL database
     remark_record = PracticeQuestionRemark(
         session_id=session_id,
-        question_text=state["current_main_question"],
-        rating=consolidated_remark.get("rating", rating),
-        feedback=consolidated_remark.get("feedback", feedback)
+        question_text=state.get("current_main_question", next_question_text),
+        rating=rating,
+        feedback=feedback
     )
     await dao.create_question_remark(remark_record)
 
-    # 4. Check ending conditions
-    if decision == "end_interview" or state["main_questions_asked"] >= 5:
+    if session_status == "completed":
         # Wrap up session
         session.status = "completed"
         session.completed_at = datetime.now(timezone.utc)
@@ -409,18 +392,9 @@ async def _execute_state_machine(db, session: PracticeSession, state: dict, user
         behavioral_summary = aggregate_session_behavior(raw_ticks)
         session.behavioral_summary = behavioral_summary
 
-        # Calculate final aggregated scores and overall feedback via LLM
-        remarks = await dao.get_remarks_for_session(session_id)
-        if remarks:
-            session.overall_score = round(sum(r.rating for r in remarks) / len(remarks), 2)
-            session.overall_feedback = await llm.generate_overall_session_summary(
-                interview_title=interview.title,
-                remarks=[{"question_text": r.question_text, "rating": r.rating, "feedback": r.feedback} for r in remarks],
-                behavioral_summary=behavioral_summary
-            )
-        else:
-            session.overall_score = 0.0
-            session.overall_feedback = "No questions completed."
+        final_report = graph_res.get("final_report", {})
+        session.overall_score = final_report.get("overall_score", 0.0)
+        session.overall_feedback = final_report.get("final_summary", "Interview session completed.")
 
         await dao.update_session(session)
         await redis_client.delete(f"practice:session:{session_id}")
@@ -433,22 +407,10 @@ async def _execute_state_machine(db, session: PracticeSession, state: dict, user
             "behavioral_summary": session.behavioral_summary
         })
     else:
-        # Transition to next main question
-        # If next_question_text is empty, generate it on the fly
-        if not next_question_text:
-            next_question_text = await llm.generate_first_question(
-                job_description=interview.job_description,
-                resume_text=interview.resume_text,
-                difficulty=interview.difficulty
-            )
-
+        # Transition to next main question topic
         state["current_main_question"] = next_question_text
-        state["dialogue_history"].append({"role": "assistant", "content": next_question_text})
-        state["current_question_thread"] = [
-            {"role": "assistant", "content": next_question_text}
-        ]
         state["followup_count"] = 0
-        state["main_questions_asked"] += 1
+        state["main_questions_asked"] = graph_res.get("topic_count", 1)
 
         await redis_client.set(f"practice:session:{session_id}", json.dumps(state))
         await ws_manager.send_json(session_id, {
@@ -456,3 +418,4 @@ async def _execute_state_machine(db, session: PracticeSession, state: dict, user
             "question_text": next_question_text,
             "is_followup": False
         })
+

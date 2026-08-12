@@ -28,6 +28,10 @@ upstash-redis = "^1.7.0"
 mediapipe = "^0.10.14"
 opencv-python-headless = "^4.10.0.84"
 numpy = "^1.26.4"
+langgraph = "^0.2.70"
+langchain-core = "^0.3.36"
+langchain-groq = "^0.2.4"
+
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
