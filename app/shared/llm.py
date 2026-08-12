@@ -21,14 +21,8 @@ client = AsyncGroq(api_key=settings.GROQ_API_KEY)
 async def generate_questions(
     topic: str, num_questions: int, doc_text: Optional[str] = None
 ) -> List[Dict]:
-    context = ""
-    if doc_text:
-        context = f"\nUse the following document text as context:\n{doc_text}\n"
-
-    prompt = (
-        f"Generate {num_questions} viva questions on topic: {topic}. {context}"
-        'Respond ONLY with a JSON array: [{"question": "...", "answer": "...", "hint": "..."}, ...]\n'
-        "hint can be null."
+    prompt = build_generate_questions_prompt(
+        topic=topic, num_questions=num_questions, doc_text=doc_text
     )
 
     try:
@@ -77,10 +71,11 @@ async def generate_questions(
 async def improve_question(
     question_text: str, answer_text: str, hint: Optional[str], instruction: str
 ) -> Dict:
-    prompt = (
-        f"Given this viva question: {question_text}, answer: {answer_text}, hint: {hint}.\n"
-        f"User instruction: {instruction}\n"
-        'Respond ONLY with JSON: {"question": "...", "answer": "...", "hint": "..."}'
+    prompt = build_improve_question_prompt(
+        question_text=question_text,
+        answer_text=answer_text,
+        hint=hint,
+        instruction=instruction,
     )
 
     try:
@@ -129,18 +124,10 @@ async def improve_question(
 async def evaluate_answer(
     question_text: str, correct_answer: str, user_answer: str
 ) -> Dict:
-    prompt = (
-        "You are an expert viva examiner. Evaluate the candidate's transcribed answer against the expected correct answer.\n\n"
-        f"Question: {question_text}\n"
-        f"Expected Correct Answer: {correct_answer}\n"
-        f"Candidate's Answer: {user_answer}\n\n"
-        "Evaluate the answer out of 10 points (0.0 to 10.0). Be objective but constructive. "
-        "Provide a rating (float between 0.0 and 10.0), and detailed feedback explaining your rating.\n"
-        "You must respond ONLY with a JSON object in this format:\n"
-        "{\n"
-        '  "rating": <float between 0.0 and 10.0>,\n'
-        '  "feedback": "<string providing clear constructive feedback>"\n'
-        "}"
+    prompt = build_evaluate_answer_prompt(
+        question_text=question_text,
+        correct_answer=correct_answer,
+        user_answer=user_answer,
     )
 
     try:
