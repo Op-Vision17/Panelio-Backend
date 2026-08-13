@@ -12,6 +12,7 @@ from app.core.security import verify_token
 from app.features.practice import service
 from app.features.practice.schema import (
     PracticeInterviewResponse,
+    PracticeSessionListItemResponse,
     PracticeSessionResponse,
     PracticeSessionSummaryResponse,
 )
@@ -22,6 +23,7 @@ from app.shared.responses import SuccessResponse, success_response
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
 
 
 @router.post("/interviews", response_model=SuccessResponse[PracticeInterviewResponse], status_code=status.HTTP_201_CREATED)
@@ -115,6 +117,27 @@ async def submit_audio_answer(
     )
 
 
+@router.get("/sessions", response_model=SuccessResponse[List[PracticeSessionListItemResponse]])
+async def get_user_sessions(
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_onboarded_user)
+):
+    res = await service.get_user_practice_sessions(db, current_user.id)
+    return success_response(
+        data=[PracticeSessionListItemResponse.model_validate(x) for x in res],
+        message="User practice sessions retrieved successfully"
+    )
+
+
+@router.delete("/sessions/{session_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_session(
+    session_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_onboarded_user)
+):
+    await service.delete_practice_session(db, session_id, current_user.id)
+
+
 @router.get("/sessions/{session_id}/summary", response_model=SuccessResponse[PracticeSessionSummaryResponse])
 async def get_session_summary(
     session_id: uuid.UUID,
@@ -126,6 +149,7 @@ async def get_session_summary(
         data=PracticeSessionSummaryResponse.model_validate(res),
         message="Practice session summary retrieved successfully"
     )
+
 
 
 @router.websocket("/ws/{session_id}")

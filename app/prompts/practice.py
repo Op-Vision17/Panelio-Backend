@@ -60,7 +60,8 @@ def build_evaluate_and_route_system_prompt(
         "Assess the candidate's latest response against the question asked, context (JD and Resume), and history.\n\n"
         f"The target difficulty level of the interview is '{difficulty}'. "
         "Formulate any follow-up or new question to match this technical depth.\n\n"
-        "Evaluate the latest response out of 10.0 points. Provide objective, constructive feedback.\n"
+        "Evaluate the latest response out of 100 marks (score). Provide objective, constructive feedback, "
+        "specifically highlighting what was explained, what key points were missing, and the primary area to focus on.\n"
         "Then, decide the next action:\n"
         "1. 'followup': Ask a follow-up question digging deeper into their response.\n"
         "2. 'next_question': Move to a brand-new main technical/situational question.\n"
@@ -68,8 +69,12 @@ def build_evaluate_and_route_system_prompt(
         f"{constraints}\n\n"
         "You must respond ONLY with a JSON object in this exact schema:\n"
         "{\n"
+        '  "score": <float, 0.0 to 100.0>,\n'
         '  "rating": <float, 0.0 to 10.0>,\n'
-        '  "feedback": "<detailed feedback string>",\n'
+        '  "what_was_explained": "<concise summary of what candidate explained>",\n'
+        '  "what_was_missing": "<key concepts or technical details missing from response>",\n'
+        '  "area_to_focus": "<specific topic or skill the candidate should focus on>",\n'
+        '  "feedback": "<detailed constructive feedback string>",\n'
         '  "decision": "followup" | "next_question" | "end_interview",\n'
         '  "reason": "<reasoning for this decision>",\n'
         '  "next_question_text": "<text of follow-up or new question, empty string if ending>"\n'
@@ -110,13 +115,17 @@ def build_question_remark_system_prompt() -> str:
     Build system prompt for generating a consolidated summary report per main question topic.
     """
     return (
-        "You are an senior interviewer drafting a consolidated summary report for a candidate's response to an interview topic.\n"
+        "You are a senior interviewer drafting a consolidated summary report for a candidate's response to an interview topic.\n"
         "Review the entire discussion thread starting with the main question, along with any subsequent follow-up interactions.\n"
-        "Provide a single consolidated grade rating (0.0 to 10.0) representing the candidate's command over this specific topic, "
+        "Provide a single consolidated grade score (0.0 to 100.0) representing the candidate's command over this specific topic, "
         "and a detailed, constructive feedback paragraph summarizing their performance on this topic.\n\n"
         "You must respond ONLY with a JSON object in this exact schema:\n"
         "{\n"
+        '  "score": <float, 0.0 to 100.0>,\n'
         '  "rating": <float, 0.0 to 10.0>,\n'
+        '  "what_was_explained": "<summary of what candidate explained>",\n'
+        '  "what_was_missing": "<what was missing in their explanation>",\n'
+        '  "area_to_focus": "<area to focus>",\n'
         '  "feedback": "<consolidated constructive summary feedback string>"\n'
         "}"
     )
@@ -145,9 +154,23 @@ def build_overall_summary_system_prompt() -> str:
     Build system prompt for final interview session summary.
     """
     return (
-        "You are an senior executive interviewer providing the final comprehensive summary report for a completed mock interview session.\n"
+        "You are a senior executive interviewer providing the final comprehensive summary report for a completed mock interview session.\n"
         "Synthesize the candidate's technical performance across all topics along with any provided objective behavioral telemetry.\n"
-        "Draft a cohesive, highly professional, encouraging, and constructive final evaluation summary paragraph."
+        "Formulate a structured report covering 5 specific wireframe sections:\n"
+        "1. Overall score (0-100 marks) and executive evaluation summary.\n"
+        "2. Speech score (0-100 marks) and speech behavior summary (evaluating articulation, tone, fluency, confidence).\n"
+        "3. Video score (0-100 marks) and video posture/gestures summary (incorporating visual engagement metrics).\n"
+        "4. Actionable Suggestions (list of specific things the user should work upon to improve).\n\n"
+        "You must respond ONLY with a JSON object in this exact schema:\n"
+        "{\n"
+        '  "overall_score": <float, 0.0 to 100.0>,\n'
+        '  "overall_summary": "<executive evaluation summary text>",\n'
+        '  "speech_score": <float, 0.0 to 100.0>,\n'
+        '  "speech_summary": "<speech delivery, articulation, confidence, and fluency summary>",\n'
+        '  "video_score": <float, 0.0 to 100.0>,\n'
+        '  "video_summary": "<video posture, eye contact, gestures, and camera engagement summary>",\n'
+        '  "suggestions": ["<suggestion item 1>", "<suggestion item 2>", "<suggestion item 3>"]\n'
+        "}"
     )
 
 
@@ -162,9 +185,19 @@ def build_overall_summary_user_content(
     remarks_summary = ""
     for idx, r in enumerate(remarks, 1):
         q_text = r.get("question_text") if isinstance(r, dict) else getattr(r, "question_text", "")
-        rating = r.get("rating") if isinstance(r, dict) else getattr(r, "rating", 0.0)
+        rating = r.get("score") or (r.get("rating", 0.0) * 10) if isinstance(r, dict) else (getattr(r, "score", None) or getattr(r, "rating", 0.0) * 10)
+        explained = r.get("what_was_explained") if isinstance(r, dict) else getattr(r, "candidate_answer", "")
+        missing = r.get("what_was_missing") if isinstance(r, dict) else getattr(r, "what_was_missing", "")
+        focus = r.get("area_to_focus") if isinstance(r, dict) else getattr(r, "area_to_focus", "")
         feedback = r.get("feedback") if isinstance(r, dict) else getattr(r, "feedback", "")
-        remarks_summary += f"Topic {idx}: {q_text}\nGrade: {rating}/10.0\nFeedback: {feedback}\n\n"
+        remarks_summary += (
+            f"Topic {idx}: {q_text}\n"
+            f"Score: {rating}/100.0\n"
+            f"What Was Explained: {explained}\n"
+            f"What Was Missing: {missing}\n"
+            f"Area To Focus: {focus}\n"
+            f"Feedback: {feedback}\n\n"
+        )
 
     behavioral_context = ""
     if behavioral_summary and behavioral_summary.get("total_frames_analyzed", 0) > 0:
@@ -181,7 +214,7 @@ def build_overall_summary_user_content(
             f"- Sustained Looking Away Events (>2s): {looking_away_events} (Avg Duration: {avg_look_away_dur}s)\n"
             f"- Posture Alignment: {posture_upright}% Upright\n\n"
             "STRICT GUIDELINE FOR BEHAVIORAL FEEDBACK:\n"
-            "Incorporate these empirical metrics constructively into your evaluation summary (e.g., noting strong camera engagement or suggesting keeping eye level steady).\n"
+            "Incorporate these empirical metrics constructively into your video_summary and video_score (e.g., noting strong camera engagement or suggesting keeping eye level steady).\n"
             "DO NOT make subjective assumptions or emotional judgements such as claiming the candidate was 'nervous', 'anxious', 'lacking confidence', or 'deceptive'. Focus strictly on objective visual engagement observations."
         )
 
@@ -189,5 +222,6 @@ def build_overall_summary_user_content(
         f"Interview Title: {interview_title}\n\n"
         f"Topic Remarks Breakdown:\n{remarks_summary}\n"
         f"{behavioral_context}\n\n"
-        "Provide the final evaluation summary text."
+        "Provide the JSON evaluation."
     )
+

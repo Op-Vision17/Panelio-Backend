@@ -55,6 +55,14 @@ class PracticeSession(Base):
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     overall_score: Mapped[float | None] = mapped_column(Float, nullable=True)
     overall_feedback: Mapped[str | None] = mapped_column(Text, nullable=True)
+    overall_summary: Mapped[str | None] = mapped_column(Text, nullable=True)
+    speech_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    speech_summary: Mapped[str | None] = mapped_column(Text, nullable=True)
+    speech_metrics: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    video_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    video_summary: Mapped[str | None] = mapped_column(Text, nullable=True)
+    video_metrics: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    suggestions: Mapped[list | None] = mapped_column(JSON, nullable=True)
     behavioral_summary: Mapped[dict | None] = mapped_column(JSON, nullable=True)
 
     interview: Mapped["PracticeInterview"] = relationship("PracticeInterview", back_populates="sessions")
@@ -74,10 +82,15 @@ class PracticeQuestionRemark(Base):
         UUID(as_uuid=True), ForeignKey("practice_sessions.id", ondelete="CASCADE"), nullable=False
     )
     question_text: Mapped[str] = mapped_column(Text, nullable=False)
-    rating: Mapped[float] = mapped_column(Float, nullable=False)
-    feedback: Mapped[str] = mapped_column(Text, nullable=False)
+    candidate_answer: Mapped[str | None] = mapped_column(Text, nullable=True)
+    what_was_missing: Mapped[str | None] = mapped_column(Text, nullable=True)
+    area_to_focus: Mapped[str | None] = mapped_column(Text, nullable=True)
+    score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    rating: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    feedback: Mapped[str] = mapped_column(Text, nullable=False, default="")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
 
     session: Mapped["PracticeSession"] = relationship("PracticeSession", back_populates="remarks")
+

@@ -193,6 +193,36 @@ async def start_practice_session(db, interview_id: uuid.UUID, user_id: uuid.UUID
 
 
 
+async def get_user_practice_sessions(db, user_id: uuid.UUID) -> List[Dict]:
+    dao = PracticeDAO(db)
+    sessions = await dao.get_sessions_by_user(user_id)
+    results = []
+    for s in sessions:
+        title = s.interview.title if s.interview else "Practice Interview"
+        results.append({
+            "id": s.id,
+            "interview_id": s.interview_id,
+            "interview_title": title,
+            "status": s.status,
+            "created_at": s.created_at,
+            "completed_at": s.completed_at,
+            "overall_score": s.overall_score,
+            "speech_score": s.speech_score,
+            "video_score": s.video_score,
+        })
+    return results
+
+
+async def delete_practice_session(db, session_id: uuid.UUID, user_id: uuid.UUID):
+    dao = PracticeDAO(db)
+    deleted = await dao.delete_session(session_id, user_id)
+    if not deleted:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Session not found or access denied"
+        )
+
+
 async def get_session_summary(db, session_id: uuid.UUID, user_id: uuid.UUID) -> Dict:
     dao = PracticeDAO(db)
     session = await dao.get_session_by_id(session_id)
@@ -344,7 +374,11 @@ async def _execute_state_machine(db, session: PracticeSession, state: dict, user
     )
 
     rating = graph_res.get("last_rating", 5.0)
+    score = graph_res.get("last_score", rating * 10)
     feedback = graph_res.get("last_feedback", "Recorded.")
+    what_was_explained = graph_res.get("last_what_was_explained", user_answer)
+    what_was_missing = graph_res.get("last_what_was_missing", "")
+    area_to_focus = graph_res.get("last_area_to_focus", "")
     decision = graph_res.get("last_decision", "next_question")
     next_question_text = graph_res.get("current_question", "")
     session_status = graph_res.get("session_status", "active")
@@ -352,8 +386,12 @@ async def _execute_state_machine(db, session: PracticeSession, state: dict, user
     # Broadcast answer evaluation results to WebSocket client
     await ws_manager.send_json(session_id, {
         "type": "answer_graded",
+        "score": score,
         "rating": rating,
-        "feedback": feedback
+        "feedback": feedback,
+        "what_was_explained": what_was_explained,
+        "what_was_missing": what_was_missing,
+        "area_to_focus": area_to_focus
     })
 
     if decision == "followup" and graph_res.get("followup_count", 0) <= 2 and session_status != "completed":
@@ -370,6 +408,10 @@ async def _execute_state_machine(db, session: PracticeSession, state: dict, user
     remark_record = PracticeQuestionRemark(
         session_id=session_id,
         question_text=state.get("current_main_question", next_question_text),
+        candidate_answer=user_answer,
+        what_was_missing=what_was_missing,
+        area_to_focus=area_to_focus,
+        score=score,
         rating=rating,
         feedback=feedback
     )
@@ -394,7 +436,13 @@ async def _execute_state_machine(db, session: PracticeSession, state: dict, user
 
         final_report = graph_res.get("final_report", {})
         session.overall_score = final_report.get("overall_score", 0.0)
-        session.overall_feedback = final_report.get("final_summary", "Interview session completed.")
+        session.overall_feedback = final_report.get("overall_summary", "Interview session completed.")
+        session.overall_summary = final_report.get("overall_summary", "Interview session completed.")
+        session.speech_score = final_report.get("speech_score", session.overall_score)
+        session.speech_summary = final_report.get("speech_summary", "Speech delivery evaluated.")
+        session.video_score = final_report.get("video_score", session.overall_score)
+        session.video_summary = final_report.get("video_summary", "Video posture evaluated.")
+        session.suggestions = final_report.get("suggestions", [])
 
         await dao.update_session(session)
         await redis_client.delete(f"practice:session:{session_id}")
@@ -403,7 +451,12 @@ async def _execute_state_machine(db, session: PracticeSession, state: dict, user
         await ws_manager.send_json(session_id, {
             "type": "session_completed",
             "overall_score": session.overall_score,
-            "overall_feedback": session.overall_feedback,
+            "overall_summary": session.overall_summary,
+            "speech_score": session.speech_score,
+            "speech_summary": session.speech_summary,
+            "video_score": session.video_score,
+            "video_summary": session.video_summary,
+            "suggestions": session.suggestions,
             "behavioral_summary": session.behavioral_summary
         })
     else:
@@ -418,4 +471,5 @@ async def _execute_state_machine(db, session: PracticeSession, state: dict, user
             "question_text": next_question_text,
             "is_followup": False
         })
+
 

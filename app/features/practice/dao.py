@@ -66,6 +66,36 @@ class PracticeDAO:
         await self.db.refresh(session)
         return session
 
+    async def get_sessions_by_user(self, user_id: uuid.UUID) -> Sequence[PracticeSession]:
+        stmt = (
+            select(PracticeSession)
+            .options(selectinload(PracticeSession.interview))
+            .where(PracticeSession.user_id == user_id)
+            .order_by(PracticeSession.created_at.desc())
+        )
+        result = await self.db.execute(stmt)
+        return result.scalars().all()
+
+    async def get_sessions_for_interview(self, interview_id: uuid.UUID, user_id: uuid.UUID) -> Sequence[PracticeSession]:
+        stmt = (
+            select(PracticeSession)
+            .where(
+                PracticeSession.interview_id == interview_id,
+                PracticeSession.user_id == user_id
+            )
+            .order_by(PracticeSession.created_at.desc())
+        )
+        result = await self.db.execute(stmt)
+        return result.scalars().all()
+
+    async def delete_session(self, session_id: uuid.UUID, user_id: uuid.UUID) -> bool:
+        session = await self.get_session_by_id(session_id)
+        if session and session.user_id == user_id:
+            await self.db.delete(session)
+            await self.db.commit()
+            return True
+        return False
+
     async def create_question_remark(self, remark: PracticeQuestionRemark) -> PracticeQuestionRemark:
         self.db.add(remark)
         await self.db.commit()
@@ -80,3 +110,4 @@ class PracticeDAO:
         )
         result = await self.db.execute(stmt)
         return result.scalars().all()
+
